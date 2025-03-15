@@ -12,6 +12,8 @@ RUN mvn -B clean package -DskipTests
 # Second Stage: Create a lightweight final image
 FROM eclipse-temurin:17-jdk-alpine-3.21 AS runtime
 
+RUN apk update && apk upgrade
+
 WORKDIR /app
 
 # Use least privilege user

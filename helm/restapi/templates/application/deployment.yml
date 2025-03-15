@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deploy.restapi.name }}
+  labels:
+    {{- toYaml .Values.deploy.restapi.labels | nindent 4 }}
+spec:
+{{- if not .Values.hpa.enabled }}
+  replicas: 1
+{{- end }}
+  selector:
+    matchLabels:
+      {{- toYaml .Values.deploy.restapi.labels | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- toYaml .Values.deploy.restapi.labels | nindent 8 }}
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: app-account-default
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.deploy.restapi.podSecurityContext | nindent 8 }}
+      containers:
+        - name: app-restapi-container
+          image: "{{ .Values.deploy.restapi.repository }}/{{ .Values.deploy.restapi.image }}:{{ .Values.deploy.restapi.tag }}"
+          ports:
+            - containerPort: {{ .Values.deploy.restapi.app_port }}
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://{{ .Values.deploy.restapi.db_hostname }}:{{ .Values.deploy.restapi.db_port }}/{{ .Values.deploy.restapi.db_database }}?createDatabaseIfNotExist=true"
+            - name: SPRING_DATASOURCE_WRITER_URL
+              value: "jdbc:mysql://{{ .Values.deploy.restapi.db_hostname }}:{{ .Values.deploy.restapi.db_port }}/{{ .Values.deploy.restapi.db_database }}?createDatabaseIfNotExist=true"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "{{ .Values.deploy.restapi.db_username }}"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.deploy.restapi.db_password_secret_name }}
+                  key: {{ .Values.deploy.restapi.db_password_secret_key }}
+          resources:
+            {{- toYaml .Values.deploy.restapi.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.deploy.restapi.securityContext | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.deploy.restapi.readinessProbe.path }}
+              port: {{ .Values.deploy.restapi.app_port }}
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.deploy.restapi.readinessProbe.path }}
+              port: {{ .Values.deploy.restapi.app_port }}
+            initialDelaySeconds: 20
+            periodSeconds: 10

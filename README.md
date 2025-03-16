@@ -10,14 +10,14 @@ This repository contains a Spring Boot application with a complete DevOps setup,
 - [CI/CD](#ci-cd)
 - [Infrastructure Provisioning with Terraform](#infrastructure-provisioning-with-terraform)
 - [Achievements](#achievements)
-- 
+- [Future improvements](#future-improvements)
 
 ---
 
 ## Design Decisions
 
-- I have deliberately kept the MySql DB out of the application helm chart as in real-world scenario we could be using a common Cloud MySQL service for multiple applications including this one.
-- For sake of the assignment purposes, we will install it on our k8s cluster using [mysql helm chart from bitnami](https://artifacthub.io/packages/helm/bitnami/mysql) in the further instructions.
+- I have deliberately kept the MySQL DB out of the application helm chart as in real-world scenario we could be using a common Cloud MySQL service for multiple applications including this one.
+- For sake of the assignment purposes, we will install MySQL on our k8s cluster using [mysql helm chart from bitnami](https://artifacthub.io/packages/helm/bitnami/mysql) in the further instructions.
 
 ## Local Development with Docker Compose
 
@@ -187,13 +187,13 @@ You will see result like:
 Greetings from Crewmeister, Ankur Garg!
 ```
 
-Let's keep this helm chart installed for now while we install monitoring.
+Let's keep this helm chart installed for now while we setup monitoring for our applicartion using prometheus.
 
 ## Monitoring
 
-As of now, we will only do the infrastructure level monitoring as I noticed that `/actuator/prometheus` endpoint is not implemented in code as of now.
+As of now, we will only do the infrastructure level monitoring, as I noticed that `/actuator/prometheus` endpoint is not implemented in the code yet.
 
-We will install kube-prometheus-stack helm chart to install Prometheus as well as Grafana for us.
+We will install [kube-prometheus-stack](https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack/) helm chart to install Prometheus as well as Grafana for us.
 
 ```bash
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -201,7 +201,7 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 ```bash
 helm --namespace monitoring install monitoring prometheus-community/kube-prometheus-stack --create-namespace
 ```
-This will take some time, then verify and wait until all the pods are ready.
+This will take some time. Wait & verify that all the pods are ready.
 
 ```bash
 root@DESKTOP-R3H2LHD:~/personal/repos/devops-springboot# kubectl get pods -n monitoring
@@ -230,33 +230,38 @@ Password: prom-operator
 
 Click on `Dashboards` on the left panel and then select `Kubernetes / Compute Resources / Pod`
 
-Here you can monitor your pods health.
+Here you can monitor your pod's health.
 
 ![Alt Text](/screenshots/prometheus.png)
 
-You can also take a look at other dashboards as required.
+You can also take a look at other dashboards, if needed.
 
 ## CI-CD
 
 ### CI
 
-CI is implemented using github-actions, where every successful push to default `main` branch will trigger the CI workflow doing below steps:
+We are using the commit-id as tags for our image. Our github-action bot will automatically update the image tag in the [values.yaml](helm/restapi/values.yaml) file with the latest commit-id in the end, to make sure that we are using the latest docker image for our deployment.
+
+***Please note that PR checks and main workflow are configured to run only for changes detected in either `Dockerfile` or inside `app/**` directory as it's not desirable to build & push docker images for other changes.***
+
+Devs can just [create a PR](https://github.com/ankur512512/devops-springboot/pull/2) to the `main` branch which will run a [PR-check](https://github.com/ankur512512/devops-springboot/actions/runs/13883566562/job/38845258258) to build & scan the image for quick feedbacks.
+
+If successful & approved, the PR can be merged to trigger the main workflow which will do below:
 
 - Checkout repo
-- Login to Dockerhub
 - Build image
 - Run Trivy scan for vulnerabilities
+- Login to Dockerhub
 - Push image to Dockerhub
+- Update Image Version in the HelmChart values.yaml
 
-We are using the commit-id as tags to our image. So, remember to always update the image tag in the [values.yaml](helm/restapi/values.yaml) file with the latest commit id, to make sure that we are using the latest docker image for our deployment.
-
-As we have implemented CD as well further, we are pushing to `main` branch for now. If we want more control we can put PR checks in place and set branch protection rules for the default branch for controlled environments.
+This updated values.yaml will be picked up by our CD tool in next step.
 
 ### CD
 
 Continuous Deployment (CD) can be implemented using [ArgoCD](https://argo-cd.readthedocs.io/en/stable/)
 
-ArgoCD which will keep scanning our repo for any changes in the helm chart and will automatically trigger a fresh deployment accordingly.
+ArgoCD will keep scanning our repo for any changes in the helm chart and will automatically trigger a fresh deployment accordingly.
 
 To install ArgoCD helm chart:
 
@@ -290,7 +295,7 @@ But before, make sure that you delete our existing application helm chart as we 
 helm uninstall restapi
 ```
 
-We have a ArgoCD application manifest ready in our repo. Simply apply the manifest by using:
+We have an ArgoCD application manifest ready in our repo. Simply apply the manifest by using:
 
 ```bash
 kubectl apply -f argocd/restapi.yml
@@ -308,7 +313,7 @@ restapi-deploy-64d886dcfc-wr75f   0/1     Running   0          8s
 root@DESKTOP-R3H2LHD:~/personal/repos/devops-springboot#
 ```
 
-You can also see the deployment and ArgoCD workflow live in the UI. Let's again use port-forwarding for that:
+You can also see the deployment and ArgoCD workflow, live in the UI. Let's again use port-forwarding for that:
 
 ```bash
 kubectl port-forward service/my-argo-cd-argocd-server -n argocd 9090:443
@@ -324,7 +329,7 @@ Fetch the ArgoCD admin password by using:
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
 
-Carefully copy the password (make sure you don't leave behing any special chars in suffix) and use it in the UI. So, our credentials are:
+Carefully copy the password *(make sure you don't leave behind any special chars in suffix)* and use it in the UI. Once again, our credentials will be:
 
 ```
 User: admin
@@ -344,7 +349,7 @@ If the application is ready you can again do the port-forwarding and test it lik
 ### Disclaimer
 I have created the terraform code for this but I don't have any cloud subscription available now, so can't do terraform apply.
 
-But I am faily confident that it should work, if not, with minor adjustments.
+But I am fairly confident that it would work, if not, with minor adjustments.
 
 ### Prerequisites
 
@@ -359,7 +364,7 @@ But I am faily confident that it should work, if not, with minor adjustments.
 - This will also install Prometheus, ArgoCD and MySQL helm charts.
 - We can install our application helm chart as well using this but I have intentionally kept it separate to be controlled by ArgoCD only to keep the infra and application layers separate.
 
-Let's store the service account key in a file let's say: `/var/tmp/terraform.json`
+Let's store our google service account key in a file let's say: `/var/tmp/terraform.json`
 
 Then export the below variable:
 
@@ -386,4 +391,12 @@ terraform -chdir=terraform apply --auto-approve
 - We have kept the image size minimal by using alpine images and using different build and deploy stages.
 - We have used Aqua Trivy to scan our image before pushing it to make sure we keep our application from any vulnerabilities.
 - Used least access privilege model to limit the access of the user inside pod and container.
-- Also updated the [pom.xml](app/pom.xml#L35-39) file to update tomcat version to fix the vulnerability found by the Trivy Scan.
+- Also updated the [pom.xml](app/pom.xml#L35-39) file to update tomcat version to fix an existing vulnerability in the application code, found by Trivy Scan.
+- Have used [SPOT VMs](https://cloud.google.com/kubernetes-engine/docs/concepts/spot-vms), to keep the cost in check for our Kubernetes cluster.
+
+## Future improvements
+
+- Our application can be configured to scap and expose metrics on `/actuator/prometheus` endpoint for further monitoring.
+- Ingress can be enabled for the required services.
+- Ideally Terraform code should be kept in a different repo. As it's best practice to keep Infra & Application code in separate repos.
+- Terraform code can be further modified to use modules for VPC and GKE.

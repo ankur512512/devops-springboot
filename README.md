@@ -11,6 +11,7 @@ This repository contains a Spring Boot application with a complete DevOps setup,
 - [Infrastructure Provisioning with Terraform](#infrastructure-provisioning-with-terraform)
 - [Achievements](#achievements)
 - [Future improvements](#future-improvements)
+- [Known Issue](#known-issue)
 
 ---
 
@@ -400,3 +401,7 @@ terraform -chdir=terraform apply --auto-approve
 - Ingress can be enabled for the required services.
 - Ideally Terraform code should be kept in a different repo. As it's best practice to keep Infra & Application code in separate repos.
 - Terraform code can be further modified to use modules for VPC and GKE.
+
+## Known Issue
+
+- Any comments or blank lines are removed in the [values.yaml](helm/restapi/values.yaml) by the github-action bot during the image updater process. More details: https://github.com/OpsVerseIO/image-updater-action?tab=readme-ov-file#known-issues

@@ -12,6 +12,7 @@ RUN mvn -B clean package -DskipTests
 # Second Stage: Create a lightweight final image
 FROM eclipse-temurin:17-jdk-alpine-3.21 AS runtime
 
+# Fix CVE-2025-0840 detected by Trivy
 RUN apk update && apk upgrade
 
 WORKDIR /app

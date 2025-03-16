@@ -22,7 +22,8 @@ jobs:
         run: |
           docker build -t ankur512512/restapi:"$GITHUB_SHA" .
           docker images
-      - name: Run Trivy vulnerability scanner for frontend image
+
+      - name: Run Trivy vulnerability scanner for the image
         uses: aquasecurity/trivy-action@0.28.0
         env:
           TRIVY_DISABLE_VEX_NOTICE: true
@@ -37,3 +38,18 @@ jobs:
       - name: Push images
         run: |
           docker push ankur512512/restapi:"$GITHUB_SHA"
+
+      - name: Update Image Version in the related HelmChart values.yaml
+        uses: OpsVerseIO/image-updater-action@0.1.0
+        with:
+          valueFile: './helm/restapi/values.yaml'
+          branch: main
+          targetBranch: main
+          createPR: false
+          message: 'Bumping image tags to ${{ github.sha }}'
+          masterBranchName: main
+          force: true
+          changes: |
+            {
+              "deploy.restapi.tag": "${{ github.sha }}"
+            }

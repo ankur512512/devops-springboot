@@ -1,6 +1,6 @@
 resource "helm_release" "mysql" {
 
-  depends_on = [google_container_cluster.primary, google_container_node_pool.primary_nodes]
+  depends_on = [module.gke]
 
   name       = "db-mysql"
   repository = "https://charts.bitnami.com/bitnami"

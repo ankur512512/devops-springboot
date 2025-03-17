@@ -1,6 +1,6 @@
 resource "helm_release" "argo_cd" {
 
-  depends_on = [google_container_cluster.primary, google_container_node_pool.primary_nodes]
+  depends_on = [module.gke]
 
   name             = "my-argo-cd"
   repository       = "https://argoproj.github.io/argo-helm"
@@ -9,9 +9,4 @@ resource "helm_release" "argo_cd" {
   namespace        = "argocd"
   create_namespace = true
 
-  values = [
-    <<-EOT
-    # Add any custom values here if needed
-    EOT
-  ]
 }

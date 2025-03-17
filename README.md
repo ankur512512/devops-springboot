@@ -241,7 +241,9 @@ You can also take a look at other dashboards, if needed.
 
 ### CI
 
-We are using the commit-id as tags for our image. Our github-action bot will automatically update the image tag in the [values.yaml](helm/restapi/values.yaml) file with the latest commit-id in the end, to make sure that we are using the latest docker image for our deployment.
+We are using the commit-id as tags for our image. Our github-action bot will [automatically update the image tag](https://github.com/ankur512512/devops-springboot/commit/f21ce6637f07492af2439c0e603cfd5a12edea60) in the [values.yaml](helm/restapi/values.yaml) file with the latest commit-id in the end, to make sure that we are using the latest docker image for our deployment.
+
+![Alt Text](screenshots/github-actions.png)
 
 ***Please note that PR checks and main workflow are configured to run only for changes detected in either `Dockerfile` or inside `app/**` directory as it's not desirable to build & push docker images for other changes.***
 
@@ -373,6 +375,12 @@ Then export the below variable:
 export GOOGLE_CREDENTIALS=$(cat /var/tmp/terraform.json)
 ```
 
+Now, update the [backend.tf](terraform/backend.tf) file with your unique Google cloud bucket name that you created as part of [Prerequisites](#prerequisites-2). 
+
+If you want to use local backend only, or run into some issues, you can delete this file as well and re-initialize the terraform *(make sure to delete `.terraform` directory and `.terraform.lock.hcl` file before re-initializing)*.
+
+Also, update the [terraform.tfvars](terraform/terraform.tfvars) file with your project_id that should be same as in your service account.
+
 Then use the below commands to initialize and run our terraform code:
 
 ```bash
@@ -399,9 +407,10 @@ terraform -chdir=terraform apply --auto-approve
 
 - Our application can be configured to scap and expose metrics on `/actuator/prometheus` endpoint for further monitoring.
 - Ingress can be enabled for the required services.
+- In future, if we want to scale our application to talk to multiple microservices we can use a service-mesh like Istio for better obvservability, traffic management & secure communication.
 - Ideally Terraform code should be kept in a different repo. As it's best practice to keep Infra & Application code in separate repos.
-- Terraform code can be further modified to use modules for VPC and GKE.
+- Terraform modules like VPC & GKE can be kept on different repos instead of local, so other teams/projects can use them.
 
 ## Known Issue
 
-- Any comments or blank lines are removed in the [values.yaml](helm/restapi/values.yaml) by the github-action bot during the image updater process. More details: https://github.com/OpsVerseIO/image-updater-action?tab=readme-ov-file#known-issues
+- Any comments or blank lines are removed in the [values.yaml](helm/restapi/values.yaml) by the github-action bot during the image updater process. More details [here](https://github.com/OpsVerseIO/image-updater-action?tab=readme-ov-file#known-issues)

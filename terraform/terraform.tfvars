@@ -1,3 +1,2 @@
-project_id    = "my-gcp-project"
-region        = "europe-west3"
-gke_num_nodes = "1"
+project_id = "my-gcp-project-id"
+region     = "europe-west3"

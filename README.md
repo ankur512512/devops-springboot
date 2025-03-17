@@ -151,7 +151,7 @@ Now let's install our restpi application helm chart.
 helm install restapi helm/restapi --values helm/restapi/values.yaml
 ```
 
-After the helm release is deployed, wait for application pod to become healthy *(typically takes around `50-60s`)*.
+After the helm release is deployed, wait for application pod to become healthy *(could typically take upto `90s` for a new cluster)*.
 
 ```bash
 root@DESKTOP-R3H2LHD:~/personal/repos/devops-springboot# kubectl get pods
@@ -194,7 +194,7 @@ You will see result like:
 Greetings from Crewmeister, Ankur Garg!
 ```
 
-Let's keep this helm chart installed for now while we setup monitoring for our applicartion using prometheus.
+Feel free to stop the port-forwarding if you're done with the testing, just keep this helm chart installed for now, while we setup monitoring for our application using prometheus.
 
 ## Monitoring
 
@@ -241,17 +241,22 @@ Here you can monitor your pod's health.
 
 ![Alt Text](/screenshots/prometheus.png)
 
-You can also take a look at other dashboards, if needed.
+It could take a couple of minutes or more to populate and show the data initially, so don't be surprised if you see a blank dashboard initially. You can also take a look at other dashboards, if needed.
+
+Stop the port-forwarding, once you're done with the testing.
 
 ## CI-CD
 
 ### CI
 
-We are using the commit-id as tags for our image. Our github-action bot will [automatically update the image tag](https://github.com/ankur512512/devops-springboot/commit/f21ce6637f07492af2439c0e603cfd5a12edea60) in the [values.yaml](helm/restapi/values.yaml) file with the latest commit-id in the end, to make sure that we are using the latest docker image for our deployment.
+CI is implemented using github-actions and we are using the git commit-id as tag for our docker image. There are two github actions workflows:
+
+1. PR-check: For sanity-checking of Pull Requests before merging.
+2. CI: For building & pushing the latest docker image to repository and updating the image tags for CD.
+
+In the CI workflow, our github-action bot will [automatically update the image tag](https://github.com/ankur512512/devops-springboot/commit/f21ce6637f07492af2439c0e603cfd5a12edea60) in the [values.yaml](helm/restapi/values.yaml) file with the latest commit-id, provided all the previous steps are passing, to make sure that we are using the latest docker image for our deployment.
 
 ![Alt Text](screenshots/github-actions.png)
-
-***Please note that PR checks and main workflow are configured to run only for changes detected in either `Dockerfile` or inside `app/**` directory as it's not desirable to build & push docker images for other changes.***
 
 Devs can just [create a PR](https://github.com/ankur512512/devops-springboot/pull/2) to the `main` branch which will run a [PR-check](https://github.com/ankur512512/devops-springboot/actions/runs/13883566562/job/38845258258) to build & scan the image for quick feedbacks.
 
@@ -265,6 +270,8 @@ If successful & approved, the PR can be merged to trigger the main workflow whic
 - Update Image Version in the HelmChart values.yaml
 
 This updated values.yaml will be picked up by our CD tool in next step.
+
+***Please note that github-actions workflows are configured to run only for changes detected in either `Dockerfile` or inside `app/**` directory as it's not desirable to build & push docker images for other changes.***
 
 ### CD
 
@@ -298,7 +305,7 @@ root@DESKTOP-R3H2LHD:~/personal/repos/devops-springboot#
 
 Now our ArgoCD tool is installed. Let's connect this to our repository to implement CD for our application.
 
-But before, make sure that you delete our existing application helm chart as we will now be deploying it via ArgoCD. To delete that:
+But before, make sure that you uninstall our existing application helm chart, as we will now be deploying it via ArgoCD. To delete that:
 
 ```bash
 helm uninstall restapi
@@ -313,8 +320,6 @@ kubectl apply -f argocd/restapi.yml
 You will then notice that our deployment of application has started already.
 
 ```bash
-root@DESKTOP-R3H2LHD:~/personal/repos/devops-springboot# kubectl apply -f argocd/restapi.yml
-application.argoproj.io/restapi created
 root@DESKTOP-R3H2LHD:~/personal/repos/devops-springboot# kubectl get pods
 NAME                              READY   STATUS    RESTARTS   AGE
 db-mysql-0                        1/1     Running   0          54m
@@ -332,13 +337,13 @@ Open the URL and accept the certificate warning: http://localhost:9090
 
 Username is `admin`. 
 
-Fetch the ArgoCD admin password by using:
+Fetch the ArgoCD admin password, from another terminal, by using:
 
 ```bash
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
 
-Carefully copy the password *(make sure you don't leave behind any special chars in suffix)* and use it in the UI. Once again, our credentials will be:
+Carefully copy the password *(make sure you don't leave behind any special chars in suffix)* and use it in the UI. So, our credentials will be:
 
 ```
 User: admin
@@ -350,8 +355,9 @@ You will then see our lovely application deployed here:
 
 Feel free to click on it and have a look around different options.
 
-If the application is ready you can again do the port-forwarding and test it like we did before.
+Stop the port-forwarding once you're done with the ArgoCD UI portion.
 
+Although not required again, but if you want, you can test the application again by doing port-forwarding for the application and test it like we did before.
 
 ## Infrastructure Provisioning with Terraform
 
@@ -383,14 +389,14 @@ export GOOGLE_CREDENTIALS=$(cat /var/tmp/terraform.json)
 
 Now, update the [backend.tf](terraform/backend.tf) file with your unique Google cloud bucket name that you created as part of [Prerequisites](#prerequisites-2). 
 
-If you want to use local backend only, or run into some issues, you can delete this file as well and re-initialize the terraform *(make sure to delete `.terraform` directory and `.terraform.lock.hcl` file before re-initializing)*.
+If you want to use local backend only, or run into some issues, you can delete this file as well and re-initialize the terraform *(make sure to delete `terraform/.terraform/` directory and `terraform/.terraform.lock.hcl` file before re-initializing)*.
 
 Also, update the [terraform.tfvars](terraform/terraform.tfvars) file with your project_id that should be same as in your service account.
 
 Then use the below commands to initialize and run our terraform code:
 
 ```bash
-terraform -chdir terraform/. init
+terraform -chdir=terraform/. init
 ```
 Run plan using:
 ```bash
@@ -404,16 +410,16 @@ terraform -chdir=terraform apply --auto-approve
 ## Achievements
 
 - We have kept the image size minimal by using alpine images and using different build and deploy stages.
-- We have used Aqua Trivy to scan our image before pushing it to make sure we keep our application from any vulnerabilities.
+- We have used Aqua Trivy to scan our image before pushing it to make sure we keep our application secure from any vulnerabilities.
 - Used least access privilege model to limit the access of the user inside pod and container.
 - Also updated the [pom.xml](app/pom.xml#L35-39) file to update tomcat version to fix an existing vulnerability in the application code, found by Trivy Scan.
 - Have used [SPOT VMs](https://cloud.google.com/kubernetes-engine/docs/concepts/spot-vms), to keep the cost in check for our Kubernetes cluster.
 
 ## Future improvements
 
-- Our application can be configured to scap and expose metrics on `/actuator/prometheus` endpoint for further monitoring.
-- Ingress can be enabled for the required services.
-- In future, if we want to scale our application to talk to multiple microservices we can use a service-mesh like Istio for better obvservability, traffic management & secure communication.
+- Our application can be configured to scrap and expose metrics on `/actuator/prometheus` endpoint for more granular monitoring.
+- Ingress can be enabled for our application as well as ArgoCD and Grafana UI.
+- In future, if we want to scale our application to talk to multiple microservices, we can use a service-mesh like [Istio](https://istio.io/latest/about/service-mesh/) for better obvservability, traffic management & secure communication.
 - Ideally Terraform code should be kept in a different repo. As it's best practice to keep Infra & Application code in separate repos.
 - Terraform modules like VPC & GKE can be kept on different repos instead of local, so other teams/projects can use them.
 

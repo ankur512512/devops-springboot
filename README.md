@@ -4,6 +4,8 @@ This repository contains a Spring Boot application with a complete DevOps setup,
 
 ## Table of Contents
 
+- [Design Decisions](#design-decisions)
+- [Common Steps](#common-steps)
 - [Local Development with Docker Compose](#local-development-with-docker-compose)
 - [Kubernetes Deployment with Helm Charts](#kubernetes-deployment-with-helm-charts)
 - [Monitoring](#monitoring)
@@ -20,6 +22,15 @@ This repository contains a Spring Boot application with a complete DevOps setup,
 - I have deliberately kept the MySQL DB out of the application helm chart as in real-world scenario we could be using a common Cloud MySQL service for multiple applications including this one.
 - For sake of the assignment purposes, we will install MySQL on our k8s cluster using [mysql helm chart from bitnami](https://artifacthub.io/packages/helm/bitnami/mysql) in the further instructions.
 
+## Common Steps
+
+- All the commands should be executed from within the repo directory:
+    ```bash
+    git clone https://github.com/ankur512512/devops-springboot.git
+    cd devops-springboot
+    ```
+- It's advisable to open a couple of extra terminals in the repo directory for easier testing.
+
 ## Local Development with Docker Compose
 
 To run the application locally with Docker Compose:
@@ -31,24 +42,19 @@ To run the application locally with Docker Compose:
 
 ### Steps
 
-1. Clone the repository and cd into it:
-
-   ```bash
-   git clone https://github.com/ankur512512/devops-springboot.git
-   cd devops-springboot
-2. Build and start the services:
+1. Build and start the services:
    ```bash
    docker compose up --build -d
    ```
     This will build and run the application along with required services like mysql db in the background.
-3. Wait till you see all the services in healthy status.
+2. Wait till you see all the services in healthy status.
    ```bash
     root@DESKTOP-R3H2LHD:~/personal/repos/devops-springboot# docker ps
     CONTAINER ID   IMAGE                   COMMAND                  CREATED          STATUS                    PORTS                                                 NAMES
     a6fddbb575df   devops-springboot-app   "/__cacert_entrypoin…"   35 seconds ago   Up 23 seconds (healthy)   0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp           devops-springboot-app-1
     00dde56db445   mysql:8.0               "docker-entrypoint.s…"   35 seconds ago   Up 34 seconds (healthy)   3306/tcp, 33060/tcp                                   devops-springboot-db-1
     ```
-4. Test the service using below curl command:
+3. Test the service using below curl command:
 
     **GET request**:
     ```bash
@@ -71,7 +77,7 @@ To run the application locally with Docker Compose:
     ```bash
     Greetings from Crewmeister, Ankur Garg!
     ```
-5. To shutdown local development environment.
+4. To shutdown local development environment.
     ```bash
     docker compose down -v
     ```

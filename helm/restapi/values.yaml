@@ -4,7 +4,7 @@ deploy:
     image: restapi
     repository: ankur512512
     pullPolicy: IfNotPresent
-    tag: 9b529327a66655a7a876e91b4ce01159a49c9d6d
+    tag: 13ec2b36a15acf163dfab82a3fafdb3ba2795c68
     labels:
       app: restapi
     app_port: 8080

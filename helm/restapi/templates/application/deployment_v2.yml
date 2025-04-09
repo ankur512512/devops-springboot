@@ -26,7 +26,7 @@ spec:
         {{- toYaml .Values.deploy.restapi.podSecurityContext | nindent 8 }}
       containers:
         - name: app-restapi-container
-          image: "{{ .Values.deploy.restapi.repository }}/{{ .Values.deploy.restapi.image }}:{{ .Values.deploy.restapi.tag }}"
+          image: "{{ .Values.deploy.restapi.repository }}/{{ .Values.deploy.restapi.image }}:v2"
           ports:
             - containerPort: {{ .Values.deploy.restapi.app_port }}
           env:

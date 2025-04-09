@@ -1,0 +1,14 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: grafana-virtualservice
+  namespace: monitoring
+spec:
+  hosts:
+  - "grafana.ankur.com"
+  gateways:
+  - default/shared-gateway
+  http:
+  - route:
+    - destination:
+        host: kube-prometheus-stack-grafana

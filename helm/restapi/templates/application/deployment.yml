@@ -4,6 +4,7 @@ metadata:
   name: {{ .Values.deploy.restapi.name }}
   labels:
     {{- toYaml .Values.deploy.restapi.labels | nindent 4 }}
+    version: v1
 spec:
 {{- if not .Values.hpa.enabled }}
   replicas: 1
@@ -11,10 +12,12 @@ spec:
   selector:
     matchLabels:
       {{- toYaml .Values.deploy.restapi.labels | nindent 6 }}
+      version: v1
   template:
     metadata:
       labels:
         {{- toYaml .Values.deploy.restapi.labels | nindent 8 }}
+        version: v1
     spec:
       {{- if .Values.serviceAccount.create }}
       serviceAccountName: app-account-default

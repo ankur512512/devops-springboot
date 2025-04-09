@@ -1,0 +1,20 @@
+cr:
+  create: true
+  namespace: istio-system
+  spec:
+    auth:
+      strategy: "anonymous"
+    external_services:
+      prometheus:
+        url: "http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090"
+      grafana:
+        internal_url: "http://kube-prometheus-stack-grafana.monitoring.svc.cluster.local"
+        external_url: "http://grafana.ankur.com"
+        auth:
+          ca_file: ""
+          insecure_skip_verify: false
+          password: "prom-operator"
+          token: ""
+          type: "basic"
+          use_kiali_token: false
+          username: "admin"
